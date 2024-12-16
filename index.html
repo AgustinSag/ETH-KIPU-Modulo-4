@@ -1,0 +1,286 @@
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Ethers App AgustinS</title>
+        <script src="https://cdn.tailwindcss.com"></script>        
+    </head>
+    <body class="bg-gray-100 font-sans">
+        <div class="container mx-auto p-6">
+            <h1 class="text-4xl font-bold text-center text-gray-800 mb-6">Intro to Ethers AgusstinS</h1>
+            <div class="text-center">
+                <button id="btnConnect" class="bg-blue-500 text-white px-6 py-2 rounded-md hover:bg-blue-600 transition">Conectar wallet</button>
+                <button id="btnDisconnect" class="bg-red-500 text-white px-6 py-2 rounded-md hover:bg-red-600 transition mt-4" style="display:none;">Desconectar</button>
+            </div>
+            <p id="status" class="text-center text-gray-600 mt-4">ESTADO: Desconectado</p>
+            <p id="red" style="display: none;" class="text-center text-gray-600 mt-4">RED: </p>
+            <p id="ethBalance"  style="display: none;" class="text-center text-xl text-gray-800 mt-5">Balance de Wallet: 0 ETH</p>
+            <p id="TokenABalance" style="display: none;" class="text-center text-xl text-gray-800 mt-5">Balance del Token A: 0 TKB_AS</p>
+            <p id="TokenBBalance" style="display: none;" class="text-center text-xl text-gray-800 mt-5">Balance del Token B: 0 TKA_AS</p>
+                
+            <div id="LecturaFields" style="display:none;" class="bg-white p-6 rounded-lg shadow-md mt-5">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4">Metodos Read</h2>
+                
+                <label for="lblLectura" class="block text-gray-700 mt-4">Lectura:</label>
+                <p id="lectura"  class="block text-gray-700 mt-4"></p>
+                
+                <button id="btnGetPriceTokenA" class="bg-blue-500 text-white px-6 py-2 rounded-md hover:bg-blue-600 transition mt-4">Get Price Token A</button>
+                <button id="btnGetPriceTokenB" class="bg-blue-500 text-white px-6 py-2 rounded-md hover:bg-blue-600 transition mt-4">Get Price Token B</button>
+                <button id="btnGetOwner" class="bg-blue-500 text-white px-6 py-2 rounded-md hover:bg-blue-600 transition mt-4">Get Owner</button>
+                <button id="btnGetAddressTokenA" class="bg-blue-500 text-white px-6 py-2 rounded-md hover:bg-blue-600 transition mt-4">Get Address Token A</button>
+                <button id="btnGetAddressTokenB" class="bg-blue-500 text-white px-6 py-2 rounded-md hover:bg-blue-600 transition mt-4">Get Address Token B</button>
+            </div>      
+      
+            <div id="WriteFields" style="display:none;" class="bg-white p-6 rounded-lg shadow-md mt-5">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4">Metodos Write</h2>
+                
+                <label for="gas" class="block text-gray-700 mt-4">Gas:</label>
+                <input type="number" id="gas" placeholder="Gas" class="w-full mt-2 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                
+                <label for="tokenAAmount" class="block text-gray-700 mt-4">Monto Token A:</label>
+                <input type="number" id="tokenAAmount" placeholder="Monto TokenA" class="w-full mt-2 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                
+                <label for="tokenBAmount" class="block text-gray-700 mt-4">Monto Token B:</label>
+                <input type="number" id="tokenBAmount" placeholder="Monto TokenB" class="w-full mt-2 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                
+                <button id="btnAddLiquidity" class="bg-blue-500 text-white px-6 py-2 rounded-md hover:bg-blue-600 transition mt-4">Add Liquidity</button>
+                <button id="btnRemoveLiquidity" class="bg-blue-500 text-white px-6 py-2 rounded-md hover:bg-blue-600 transition mt-4">Remove Liquidity</button>
+                <button id="btnSwapAxB" class="bg-blue-500 text-white px-6 py-2 rounded-md hover:bg-blue-600 transition mt-4">SwapAxB</button>
+                <button id="btnSwapBxA" class="bg-blue-500 text-white px-6 py-2 rounded-md hover:bg-blue-600 transition mt-4">SwapBxA</button>
+            </div>
+
+        </div>
+
+        <script type="module">
+            import { ethers } from "https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.min.js";
+
+            let provider, signer, address, contractDEX, contractA, contractB, red, decimalsA, decimalsB;
+
+            const TOKEN_ADDRESS = "0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8";
+            const SIMPLEDEX_ADDRESS = "0x2E0E1E305c4543131EE4af2b30B7E52bC5064F82";
+            const TOKENA_ADDRESS = "0x948641A8567f981226ad5D05D1ea8b8EE5cc75f4";
+            const TOKENB_ADDRESS = "0x2dB62B03C601B841b745DdcFE015A067f281c30F";
+
+            async function loadABIDEX() {
+                const responseDEX = await fetch('./SimpleDEX.json');
+                console.log("🚀 ~ loadABI ~ responseDEX:", responseDEX);
+                const abiDEX = await responseDEX.json();
+                console.log("🚀 ~ loadABI ~ abiDEX:", abiDEX);
+
+                return abiDEX;
+            }
+
+            async function loadABIA() {
+                const responseA = await fetch('./TokenA.json');
+                console.log("🚀 ~ loadABI ~ responseA:", responseA);
+                const abiA = await responseA.json();
+                console.log("🚀 ~ loadABI ~ abiA:", abiA);
+
+                return abiA;
+            }
+
+            async function loadABIB() {
+                const responseB = await fetch('./TokenB.json');
+                console.log("🚀 ~ loadABI ~ responseB:", responseB);
+                const abiB = await responseB.json();
+                console.log("🚀 ~ loadABI ~ abiB:", abiB);
+
+                return abiB;
+            }
+
+            async function connectWallet() {
+                console.log('Connecting wallet...');
+
+                if(window.ethereum) {
+                    console.log('Metamask detected');
+
+                    await window.ethereum.request({ method: 'eth_requestAccounts' });
+                    provider = new ethers.BrowserProvider(window.ethereum);
+                    console.log("🚀 ~ connectWallet ~ provider:", provider);
+                    signer = await provider.getSigner();                    
+                    console.log("🚀 ~ connectWallet ~ signer:", signer)
+                    address = await signer.getAddress();
+                    console.log("🚀 ~ connectWallet ~ address:", address)
+                    red = await window.ethereum.request({method: 'net_version'});
+                    console.log("🚀 ~ connectWallet ~ red:", red)
+                    
+
+                    const balance = await provider.getBalance(address)
+                    console.log("🚀 ~ connectWallet ~ balance:", balance)
+                    const formattedBalance = ethers.formatEther(balance);
+                    console.log("🚀 ~ connectWallet ~ formattedBalance:", formattedBalance)
+
+                    const abiDEX = await loadABIDEX();
+                    const abiA = await loadABIA();
+                    const abiB = await loadABIB();
+
+                    contractDEX = new ethers.Contract(SIMPLEDEX_ADDRESS, abiDEX, signer);
+                    console.log("🚀 ~ connectWallet ~ contractDEX:", contractDEX)
+                    const contractA = new ethers.Contract(TOKENA_ADDRESS, abiA, signer);
+                    console.log("🚀 ~ connectWallet ~ contractA:", contractA)
+                    const contractB = new ethers.Contract(TOKENB_ADDRESS, abiB, signer);
+                    console.log("🚀 ~ connectWallet ~ contractB:", contractB)
+
+                    const decimalsA = await contractA.decimals();
+                    console.log("🚀 ~ connectWallet ~ decimalsA:", decimalsA)
+                    const tokenBalanceA = await contractA.balanceOf(address);
+                    const formattedTokenBalanceA = ethers.formatUnits(tokenBalanceA, decimalsA);
+                    console.log("🚀 ~ connectWallet ~ formattedTokenBalanceA:", formattedTokenBalanceA)
+
+                    const decimalsB = await contractB.decimals();
+                    console.log("🚀 ~ connectWallet ~ decimalsB:", decimalsB)
+                    const tokenBalanceB = await contractB.balanceOf(address);
+                    const formattedTokenBalanceB = ethers.formatUnits(tokenBalanceB, decimalsB);
+                    console.log("🚀 ~ connectWallet ~ formattedTokenBalanceB:", formattedTokenBalanceB)
+
+                    document.getElementById('btnConnect').style.display = 'none';
+                    document.getElementById('btnDisconnect').style.display = 'inline';
+
+                    document.getElementById('status').innerText = `ESTADO: Conectado a la cuenta ${address}`;
+                    document.getElementById('red').innerText = `RED: Conectado a la red ${red}`;
+                    document.getElementById('ethBalance').innerText = `Balance de Wallet: ${formattedBalance} ETH`;
+                    document.getElementById('TokenABalance').innerText = `Balance del Token: ${formattedTokenBalanceA} TKA_AS`;
+                    document.getElementById('TokenBBalance').innerText = `Balance del Token: ${formattedTokenBalanceB} TKB_AS`;
+
+                    document.getElementById('TokenABalance').style.display = 'block';
+                    document.getElementById('TokenBBalance').style.display = 'block';
+                    document.getElementById('ethBalance').style.display = 'block';
+                    document.getElementById('red').style.display = 'block';
+                    document.getElementById('LecturaFields').style.display = 'block';
+                    document.getElementById('WriteFields').style.display = 'block';
+                }
+                else {
+                    console.error('Metamask not detected');
+                }
+            }
+
+            async function disconnectWallet() {
+                provider = null;
+                signer = null;
+                address = null;
+
+                document.getElementById('status').innerText = "Estado: Desconectado";
+                document.getElementById('btnConnect').style.display = 'inline';
+                document.getElementById('btnDisconnect').style.display = 'none';   
+                document.getElementById('TokenABalance').style.display = 'none';
+                document.getElementById('TokenBBalance').style.display = 'none';
+                document.getElementById('ethBalance').style.display = 'none';                              
+                document.getElementById('red').style.display = 'none';                              
+                document.getElementById('LecturaFields').style.display = 'none';
+                document.getElementById('WriteFields').style.display = 'none';
+            } 
+
+            async function GetPriceTokenA() {
+                const priceA = await contractDEX.getPrice(TOKENA_ADDRESS);
+                console.log("🚀 ~ GetPriceTokenA ~ priceA:", priceA)
+                document.getElementById('lectura').innerText = `Precio Token A: ${priceA}`;
+            }
+
+            async function GetPriceTokenB() {
+                const priceB = await contractDEX.getPrice(TOKENB_ADDRESS);
+                console.log("🚀 ~ GetPriceTokenB ~ priceB:", priceB)
+                document.getElementById('lectura').innerText = `Precio Token B: ${priceB}`;
+            }
+
+            async function GetOwner() {
+                const owner = await contractDEX.owner();
+                console.log("🚀 ~ GetOwner ~ owner:", owner)
+                document.getElementById('lectura').innerText = `Owner: ${owner}`;
+            }
+
+            async function GetAddressTokenA() {
+                const addTokenA = await contractDEX.tokenA();
+                console.log("🚀 ~ GetAddressTokenA ~ addTokenA:", addTokenA)
+                document.getElementById('lectura').innerText = ` Address Token A: ${addTokenA}`;
+            }
+
+            async function GetAddressTokenB() {
+                const addTokenB = await contractDEX.tokenB();
+                console.log("🚀 ~ GetAddressTokenA ~ addTokenB:", addTokenB)
+                document.getElementById('lectura').innerText = `Address Token B: ${addTokenB}`;
+            }
+
+            async function addLiquidity() {
+                const amountGas = document.getElementById('gas').value;
+                const amountA = document.getElementById('tokenAAmount').value;
+                const amountB = document.getElementById('tokenBAmount').value;
+                console.log("🚀 ~ addLiquidity ~ Se va a agregar1:    GAS ",amountGas, "    TKA ", amountA, "    TKB ", amountB)
+
+                const amountToSendGas = ethers.parseUnits(amountGas,decimalsA);
+                const amountToSendA = ethers.parseUnits(amountA,decimalsA);
+                const amountToSendB = ethers.parseUnits(amountB,decimalsB);
+                console.log("🚀 ~ addLiquidity ~ Se va a agregar2:    GAS ",amountToSendGas, "    TKA ", amountToSendA, "    TKB ", amountToSendB)
+
+                console.log("🚀 ~ addLiquidity ~ address:", address)
+
+                // const txApprovalA = await contractA.approve(address, amountToSendA);
+                // console.log("🚀 ~ addLiquidity ~ txApprovalA:", txApprovalA)
+                // await txApprovalA.wait();
+
+                // const txApprovalB = await contractB.approve(address, amountToSendB);
+                // console.log("🚀 ~ addLiquidity ~ txApprovalB:", txApprovalB)
+                // await txApprovalB.wait();
+
+                const txResp = await contractDEX.addLiquidity(amountToSendGas, amountToSendA, amountToSendB);
+                await txResp.wait();
+                console.log("🚀 ~ addLiquidity ~ txResp:", txResp)
+            }
+
+            async function removeLiquidity() {
+                const amountGas = document.getElementById('gas').value;
+                const amountA = document.getElementById('tokenAAmount').value;
+                const amountB = document.getElementById('tokenBAmount').value;
+                console.log("🚀 ~ removeLiquidity ~ Se va a retirar1:    GAS ",amountGas, "    TKA ", amountA, "    TKB ", amountB)
+
+                const amountToSendGas = ethers.parseUnits(amountGas,decimalsA);
+                const amountToSendA = ethers.parseUnits(amountA, decimalsA);
+                const amountToSendB = ethers.parseUnits(amountB, decimalsB);
+                console.log("🚀 ~ removeLiquidity ~ Se va a retirar2:    GAS ",amountToSendGas, "    TKA ", amountToSendA, "    TKB ", amountToSendB)
+
+                console.log("🚀 ~ removeLiquidity ~ address:", address)
+
+                // const txApprovalA = await contractA.approve(address, amountToSendA);
+                // console.log("🚀 ~ removeLiquidity ~ txApprovalA:", txApprovalA)
+                // await txApprovalA.wait();
+
+                // const txApprovalB = await contractB.approve(address, amountToSendB);
+                // console.log("🚀 ~ removeLiquidity ~ txApprovalB:", txApprovalB)
+                // await txApprovalB.wait();
+
+                const txResp = await contractDEX.removeLiquidity(amountToSendGas, amountToSendA, amountToSendB);
+                console.log("🚀 ~ removeLiquidity ~ txResp:", txResp)
+            }
+
+            async function SwapAxB() {
+                const amountA = document.getElementById('tokenAAmount').value;
+                console.log("🚀 ~ SwapAxB ~ Se va a entregar:    TKA ", amountA)
+
+                const txResp = await contractDEX.swapAforB(address, amountA);
+                console.log("🚀 ~ SwapAxB ~ txResp:", txResp)
+            }
+
+            async function SwapBxA() {
+                const amountB = document.getElementById('tokenBAmount').value;
+                console.log("🚀 ~ SwapBxA ~ Se va a entregar:    TKB ", amountB)
+
+                const txResp = await contractDEX.swapBforA(address, amountB);
+                console.log("🚀 ~ SwapBxA ~ txResp:", txResp)
+            }
+
+            document.getElementById('btnConnect').addEventListener('click', connectWallet);
+            document.getElementById('btnDisconnect').addEventListener('click', disconnectWallet);
+            document.getElementById('btnGetPriceTokenA').addEventListener('click', GetPriceTokenA);
+            document.getElementById('btnGetPriceTokenB').addEventListener('click', GetPriceTokenB);
+            document.getElementById('btnGetOwner').addEventListener('click', GetOwner);
+            document.getElementById('btnGetAddressTokenA').addEventListener('click', GetAddressTokenA);
+            document.getElementById('btnGetAddressTokenB').addEventListener('click', GetAddressTokenB);
+
+            document.getElementById('btnAddLiquidity').addEventListener('click', addLiquidity);
+            document.getElementById('btnRemoveLiquidity').addEventListener('click', removeLiquidity);
+            document.getElementById('btnSwapAxB').addEventListener('click', SwapAxB);
+            document.getElementById('btnSwapBxA').addEventListener('click', SwapBxA);
+        
+        </script>
+
+    </body>
+</html>
