@@ -116,18 +116,18 @@
 
                     contractDEX = new ethers.Contract(SIMPLEDEX_ADDRESS, abiDEX, signer);
                     console.log("🚀 ~ connectWallet ~ contractDEX:", contractDEX)
-                    const contractA = new ethers.Contract(TOKENA_ADDRESS, abiA, signer);
+                    contractA = new ethers.Contract(TOKENA_ADDRESS, abiA, signer);
                     console.log("🚀 ~ connectWallet ~ contractA:", contractA)
-                    const contractB = new ethers.Contract(TOKENB_ADDRESS, abiB, signer);
+                    contractB = new ethers.Contract(TOKENB_ADDRESS, abiB, signer);
                     console.log("🚀 ~ connectWallet ~ contractB:", contractB)
 
-                    const decimalsA = await contractA.decimals();
+                    decimalsA = await contractA.decimals();
                     console.log("🚀 ~ connectWallet ~ decimalsA:", decimalsA)
                     const tokenBalanceA = await contractA.balanceOf(address);
                     const formattedTokenBalanceA = ethers.formatUnits(tokenBalanceA, decimalsA);
                     console.log("🚀 ~ connectWallet ~ formattedTokenBalanceA:", formattedTokenBalanceA)
 
-                    const decimalsB = await contractB.decimals();
+                    decimalsB = await contractB.decimals();
                     console.log("🚀 ~ connectWallet ~ decimalsB:", decimalsB)
                     const tokenBalanceB = await contractB.balanceOf(address);
                     const formattedTokenBalanceB = ethers.formatUnits(tokenBalanceB, decimalsB);
@@ -213,16 +213,16 @@
 
                 console.log("🚀 ~ addLiquidity ~ address:", address)
 
-                // const txApprovalA = await contractA.approve(address, amountToSendA);
-                // console.log("🚀 ~ addLiquidity ~ txApprovalA:", txApprovalA)
-                // await txApprovalA.wait();
+                const txApprovalA = await contractA.approve(address, amountToSendA);
+                //await txApprovalA.wait();
+                console.log("🚀 ~ addLiquidity ~ txApprovalA:", txApprovalA)
 
-                // const txApprovalB = await contractB.approve(address, amountToSendB);
-                // console.log("🚀 ~ addLiquidity ~ txApprovalB:", txApprovalB)
-                // await txApprovalB.wait();
+                const txApprovalB = await contractB.approve(address, amountToSendB);
+                //await txApprovalB.wait();
+                console.log("🚀 ~ addLiquidity ~ txApprovalB:", txApprovalB)
 
                 const txResp = await contractDEX.addLiquidity(amountToSendGas, amountToSendA, amountToSendB);
-                await txResp.wait();
+                //await txResp.wait();
                 console.log("🚀 ~ addLiquidity ~ txResp:", txResp)
             }
 
@@ -239,31 +239,42 @@
 
                 console.log("🚀 ~ removeLiquidity ~ address:", address)
 
-                // const txApprovalA = await contractA.approve(address, amountToSendA);
-                // console.log("🚀 ~ removeLiquidity ~ txApprovalA:", txApprovalA)
-                // await txApprovalA.wait();
+                const txApprovalA = await contractA.approve(address, amountToSendA);
+                //await txApprovalA.wait();
+                console.log("🚀 ~ removeLiquidity ~ txApprovalA:", txApprovalA)
 
-                // const txApprovalB = await contractB.approve(address, amountToSendB);
-                // console.log("🚀 ~ removeLiquidity ~ txApprovalB:", txApprovalB)
-                // await txApprovalB.wait();
+                const txApprovalB = await contractB.approve(address, amountToSendB);
+                //await txApprovalB.wait();
+                console.log("🚀 ~ removeLiquidity ~ txApprovalB:", txApprovalB)
 
                 const txResp = await contractDEX.removeLiquidity(amountToSendGas, amountToSendA, amountToSendB);
+                //await txResp.wait();
                 console.log("🚀 ~ removeLiquidity ~ txResp:", txResp)
             }
 
             async function SwapAxB() {
+                const amountGas = document.getElementById('gas').value;
                 const amountA = document.getElementById('tokenAAmount').value;
-                console.log("🚀 ~ SwapAxB ~ Se va a entregar:    TKA ", amountA)
+                console.log("🚀 ~ SwapAxB ~ Se va a entregar:    GAS ", amountGas,"    TKA ", amountA)
 
-                const txResp = await contractDEX.swapAforB(address, amountA);
+                const amountToSendGas = ethers.parseUnits(amountGas,decimalsA);
+                const amountToSendA = ethers.parseUnits(amountA, decimalsA);
+                console.log("🚀 ~ SwapAxB ~ Se va a entregar2:    GAS ",amountToSendGas, "    TKA ", amountToSendA)
+
+                const txResp = await contractDEX.swapAforB(amountToSendGas, amountToSendA);
                 console.log("🚀 ~ SwapAxB ~ txResp:", txResp)
             }
 
             async function SwapBxA() {
+                const amountGas = document.getElementById('gas').value;
                 const amountB = document.getElementById('tokenBAmount').value;
-                console.log("🚀 ~ SwapBxA ~ Se va a entregar:    TKB ", amountB)
+                console.log("🚀 ~ SwapBxA ~ Se va a entregar:    GAS ", amountGas,"    TKA ", amountB)
 
-                const txResp = await contractDEX.swapBforA(address, amountB);
+                const amountToSendGas = ethers.parseUnits(amountGas,decimalsA);
+                const amountToSendB = ethers.parseUnits(amountB, decimalsB);
+                console.log("🚀 ~ SwapBxA ~ Se va a entregar2:    GAS ",amountToSendGas, "    TKA ", amountToSendB)
+
+                const txResp = await contractDEX.swapBforA(amountToSendGas, amountToSendB);
                 console.log("🚀 ~ SwapBxA ~ txResp:", txResp)
             }
 
